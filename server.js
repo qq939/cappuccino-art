@@ -27,7 +27,7 @@ app.use(express.json());
 const PROMPTS_FILE = path.join(__dirname, 'prompts.json');
 const HISTORY_FILE = path.join(__dirname, 'history.json');
 
-const DEFAULT_PROMPT = `将参考图中的主体1:1融入咖啡厅场景中的卡布奇诺咖啡拉花，严格还原主体的神态、表情和所有特征，将主体的形象完美呈现在咖啡拉花上。温暖咖啡厅环境，木质桌面，柔和自然光，专业咖啡摄影，写实画质。`;
+const DEFAULT_PROMPT = `将参考图中的人物直接转化为咖啡拉花效果：严格保持原图人物的完整外貌、性别、五官、表情和所有特征不变，如同将人物抠出后以咖啡拉花的质感和色调重新呈现。咖啡厅环境，木质桌面，柔和自然光，俯拍视角，专业咖啡摄影。`;
 
 // ===== 工具函数 =====
 function getImageSize(buffer) {
