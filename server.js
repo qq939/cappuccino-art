@@ -27,7 +27,7 @@ app.use(express.json());
 const PROMPTS_FILE = path.join(__dirname, 'prompts.json');
 const HISTORY_FILE = path.join(__dirname, 'history.json');
 
-const DEFAULT_PROMPT = `将参考图中的人物直接转化为咖啡拉花效果：严格保持原图人物的完整外貌、性别、五官、表情和所有特征不变，如同将人物抠出后以咖啡拉花的质感和色调重新呈现。咖啡厅环境，木质桌面，柔和自然光，俯拍视角，专业咖啡摄影。`;
+const DEFAULT_PROMPT = `第一步：识别参考图中的视觉主体（人物、动物或物品），忽略背景。第二步：将该主体直接转化为咖啡拉花效果，严格保持主体的完整外貌、性别、五官、表情和所有特征不变，如同将主体抠出后以咖啡拉花的质感和色调重新呈现在咖啡表面。咖啡厅环境，木质桌面，柔和自然光，俯拍视角，专业咖啡摄影。`;
 
 // ===== 工具函数 =====
 function getImageSize(buffer) {
