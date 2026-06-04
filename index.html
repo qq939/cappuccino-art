@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卡布奇诺拉花</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a0f;
+    color: #e0e0e0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 30% 50%, rgba(160,100,50,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 50%, rgba(200,160,100,0.06) 0%, transparent 50%);
+    z-index: -1;
+  }
+
+  .header {
+    text-align: center;
+    padding: 32px 20px 12px;
+  }
+  .header h1 {
+    font-size: 2.4em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #d4a574, #8b5e3c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    user-select: none;
+  }
+  .header h1:hover { opacity: 0.8; }
+  .header h1:active { opacity: 0.6; }
+  .header h1 .hint {
+    font-size: 0.35em;
+    opacity: 0.5;
+    -webkit-text-fill-color: #888;
+    display: block;
+    margin-top: 2px;
+  }
+  .header p { margin-top: 8px; color: #888; font-size: 0.95em; }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+    min-height: 55vh;
+  }
+
+  .panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .panel-label {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-bottom: 12px;
+    padding: 5px 20px;
+    border-radius: 18px;
+    letter-spacing: 0.08em;
+  }
+  .panel-source .panel-label {
+    background: linear-gradient(135deg, #8b5e3c33, #d4a57433);
+    color: #d4a574;
+    border: 1px solid #8b5e3c55;
+  }
+  .panel-result .panel-label {
+    background: linear-gradient(135deg, #6b442333, #c8a07033);
+    color: #c8a070;
+    border: 1px solid #6b442355;
+  }
+
+  .drop-zone {
+    width: 100%;
+    flex: 1;
+    min-height: 380px;
+    border: 2px dashed #333;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    background: #111118;
+  }
+  .drop-zone:hover { border-color: #555; background: #15151f; }
+  .drop-zone.dragover { border-color: #d4a574; background: #1a1510; box-shadow: 0 0 30px rgba(212,165,116,0.15); }
+  .drop-zone.has-image { border-style: solid; border-color: #333; }
+  .drop-zone img { max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px; }
+
+  .placeholder-content { text-align: center; pointer-events: none; }
+  .placeholder-icon { font-size: 2.6em; margin-bottom: 10px; opacity: 0.4; }
+  .placeholder-text { font-size: 0.95em; color: #666; line-height: 1.6; }
+  .placeholder-text small { display: block; margin-top: 4px; color: #444; font-size: 0.82em; }
+
+  .arrow-container {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; min-width: 50px;
+  }
+  .arrow { font-size: 1.8em; color: #555; animation: pulse 2s ease-in-out infinite; }
+  .arrow-label { font-size: 0.72em; color: #555; writing-mode: vertical-rl; letter-spacing: 0.15em; }
+  @keyframes pulse { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.8;transform:scale(1.1)} }
+
+  .action-btn {
+    display: none;
+    margin: 20px auto;
+    padding: 12px 44px;
+    font-size: 1.05em;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #8b5e3c, #d4a574);
+    color: white;
+    transition: all 0.3s;
+    letter-spacing: 0.08em;
+  }
+  .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(139,94,60,0.3); }
+  .action-btn:active { transform: translateY(0); }
+  .action-btn.loading { opacity: 0.7; pointer-events: none; }
+  .action-btn.visible { display: block; }
+
+  .loading-overlay {
+    position: absolute; top:0;left:0;right:0;bottom:0;
+    background: rgba(10,10,15,0.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 12px; z-index: 10; display: none;
+  }
+  .loading-overlay.active { display: flex; }
+  .spinner { width:44px;height:44px;border:3px solid #333;border-top-color:#d4a574;border-radius:50%;animation:spin .8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-text { margin-top:14px; font-size:0.85em; color:#888; }
+
+  .result-badge {
+    position:absolute;top:10px;right:10px;padding:3px 10px;border-radius:6px;
+    font-size:0.72em;font-weight:600;background:rgba(0,0,0,0.6);color:#c8a070;display:none;z-index:5;
+  }
+  .result-badge.visible { display: block; }
+
+  .reset-btn {
+    position:absolute;top:10px;left:10px;width:28px;height:28px;border-radius:50%;border:none;
+    background:rgba(255,255,255,0.1);color:#aaa;font-size:0.9em;cursor:pointer;display:none;z-index:5;
+    transition:all .2s; align-items:center;justify-content:center;
+  }
+  .reset-btn:hover { background:rgba(255,255,255,0.2);color:#fff; }
+  .reset-btn.visible { display:flex; }
+
+  /* 提示词设置 */
+  .prompt-dot {
+    position: fixed; bottom: 16px; left: 16px; width: 28px; height: 28px;
+    border-radius: 50%; border: 1px solid #333; background: #15151f;
+    color: #444; font-size: 0.75em; cursor: pointer; z-index: 100;
+    display: flex; align-items: center; justify-content: center; transition: all .2s;
+  }
+  .prompt-dot:hover { border-color: #666; color: #aaa; }
+
+  .prompt-popup {
+    position: fixed; bottom: 52px; left: 16px; width: 400px; max-height: 70vh;
+    background: #111118; border: 1px solid #333; border-radius: 14px;
+    padding: 18px; z-index: 100; display: none; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .prompt-popup.active { display: block; }
+  .prompt-popup h4 { font-size: 0.9em; color: #888; margin-bottom: 10px; font-weight: 600; }
+  .prompt-popup textarea {
+    width: 100%; height: 120px; background: #0a0a0f; border: 1px solid #333; border-radius: 8px;
+    color: #ddd; padding: 10px; font-size: 0.82em; resize: vertical; line-height: 1.5;
+  }
+  .prompt-popup textarea:focus { outline: none; border-color: #8b5e3c; }
+  .prompt-popup .btn-row { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+  .prompt-popup button {
+    padding: 6px 18px; border: none; border-radius: 8px; font-size: 0.82em; cursor: pointer;
+  }
+  .prompt-popup .save-btn { background: #8b5e3c; color: #fff; }
+  .prompt-popup .reset-prompt-btn { background: #333; color: #aaa; }
+
+  /* 历史记录 */
+  .history-dot {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid #333; background: #15151f;
+    color: #444; font-size: 0.75em; cursor: pointer; z-index: 100;
+    display: flex; align-items: center; justify-content: center; transition: all .2s;
+  }
+  .history-dot:hover { border-color: #666; color: #aaa; }
+
+  .history-popup {
+    position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+    width: 420px; max-height: 70vh;
+    background: #111118; border: 1px solid #333; border-radius: 14px;
+    padding: 18px; z-index: 100; display: none; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .history-popup.active { display: block; }
+  .history-popup h4 {
+    font-size: 0.9em; color: #888; margin-bottom: 10px; font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .history-popup .clear-btn {
+    font-size: 0.75em; padding: 3px 10px; border: 1px solid #333; border-radius: 6px;
+    background: transparent; color: #666; cursor: pointer;
+  }
+  .history-popup .clear-btn:hover { border-color: #f87171; color: #f87171; }
+
+  .footer {
+    text-align: center; padding: 24px; color: #444; font-size: 0.82em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="titleBtn">☕ 卡布奇诺拉花 🎨<span class="hint">点击恢复初始Demo</span></h1>
+  <p>上传照片，AI 生成咖啡厅卡布奇诺拉花艺术</p>
+</div>
+
+<div class="container">
+  <!-- 源图面板 -->
+  <div class="panel panel-source">
+    <div class="panel-label">📷 原始照片</div>
+    <div class="drop-zone" id="sourceZone">
+      <input type="file" id="sourceInput" accept="image/*" style="display:none">
+      <img id="sourceImage" style="display:none">
+      <div class="placeholder-content" id="sourcePlaceholder">
+        <div class="placeholder-icon">📷</div>
+        <div class="placeholder-text">拖放或点击上传照片<small>支持 JPG / PNG / WebP</small></div>
+      </div>
+      <button class="reset-btn" id="sourceReset">✕</button>
+      <div class="loading-overlay" id="sourceLoading">
+        <div class="spinner"></div>
+        <div class="loading-text">处理中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 箭头 -->
+  <div class="arrow-container">
+    <div class="arrow">→</div>
+    <div class="arrow-label">拉花</div>
+  </div>
+
+  <!-- 结果面板 -->
+  <div class="panel panel-result">
+    <div class="panel-label">☕ 拉花效果</div>
+    <div class="drop-zone" id="resultZone" style="cursor:default">
+      <img id="resultImage" style="display:none">
+      <div class="placeholder-content" id="resultPlaceholder">
+        <div class="placeholder-icon">☕</div>
+        <div class="placeholder-text">生成结果将显示在这里</div>
+      </div>
+      <div class="result-badge" id="resultBadge">AI 生成</div>
+      <div class="loading-overlay" id="resultLoading">
+        <div class="spinner"></div>
+        <div class="loading-text">☕ 拉花生成中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="action-btn" id="generateBtn">☕ 开始生成拉花</button>
+
+<!-- 提示词编辑 -->
+<div class="prompt-dot" id="promptDot">✎</div>
+<div class="prompt-popup" id="promptPopup">
+  <h4>自定义提示词</h4>
+  <textarea id="promptText" placeholder="输入自定义拉花提示词..."></textarea>
+  <div class="btn-row">
+    <button class="reset-prompt-btn" id="resetPromptBtn">恢复默认</button>
+    <button class="save-btn" id="savePromptBtn">保存</button>
+  </div>
+</div>
+
+<!-- 历史记录 -->
+<div class="history-dot" id="historyDot">📋</div>
+<div class="history-popup" id="historyPopup">
+  <h4>历史记录 <button class="clear-btn" id="clearHistoryBtn">清空</button></h4>
+  <div id="historyList"></div>
+  <div id="historyEmpty" style="color:#555;font-size:0.85em;text-align:center;padding:20px;">暂无记录</div>
+</div>
+
+<div class="footer">卡布奇诺拉花 — 上传照片，AI 生成咖啡拉花艺术</div>
+
+<script>
+// ===== 状态管理 =====
+const state = { sourceFile: null, sourceUrl: null };
+
+const els = {
+  sourceImg: document.getElementById('sourceImage'),
+  sourcePh: document.getElementById('sourcePlaceholder'),
+  sourceReset: document.getElementById('sourceReset'),
+  sourceLoading: document.getElementById('sourceLoading'),
+  sourceZone: document.getElementById('sourceZone'),
+  sourceInput: document.getElementById('sourceInput'),
+  resultImg: document.getElementById('resultImage'),
+  resultPh: document.getElementById('resultPlaceholder'),
+  resultBadge: document.getElementById('resultBadge'),
+  resultLoading: document.getElementById('resultLoading'),
+  btn: document.getElementById('generateBtn'),
+};
+
+// ===== 提示词 =====
+let customPrompt = '';
+(async () => {
+  try { const r = await fetch('/api/prompts'); const d = await r.json(); customPrompt = d.prompt || ''; } catch(e) {}
+  document.getElementById('promptText').value = customPrompt;
+})();
+
+document.getElementById('promptDot').addEventListener('click', () => {
+  document.getElementById('promptPopup').classList.toggle('active');
+  document.getElementById('historyPopup').classList.remove('active');
+});
+document.getElementById('savePromptBtn').addEventListener('click', async () => {
+  customPrompt = document.getElementById('promptText').value;
+  await fetch('/api/prompts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt: customPrompt }) });
+  document.getElementById('promptPopup').classList.remove('active');
+});
+document.getElementById('resetPromptBtn').addEventListener('click', async () => {
+  customPrompt = '';
+  document.getElementById('promptText').value = '';
+  await fetch('/api/prompts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt: '' }) });
+});
+
+// ===== 历史记录 =====
+document.getElementById('historyDot').addEventListener('click', () => {
+  document.getElementById('historyPopup').classList.toggle('active');
+  document.getElementById('promptPopup').classList.remove('active');
+  loadHistoryList();
+});
+document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+  await fetch('/api/history', { method: 'DELETE' });
+  loadHistoryList();
+});
+
+async function loadHistoryList() {
+  try {
+    const r = await fetch('/api/history'); const list = await r.json();
+    const historyList = document.getElementById('historyList');
+    const historyEmpty = document.getElementById('historyEmpty');
+    if (!list.length) { historyList.innerHTML = ''; historyEmpty.style.display = 'block'; return; }
+    historyEmpty.style.display = 'none';
+    historyList.innerHTML = list.map(item => {
+      const time = new Date(item.timestamp).toLocaleString('zh-CN');
+      const isError = !!item.error;
+      const imgOrError = isError
+        ? '<div style="width:64px;height:64px;border-radius:6px;background:#1a0a0a;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:0.85em;flex-shrink:0;">✗</div>'
+        : '<img src="' + item.imageUrl + '" style="width:64px;height:64px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;" onclick="window.open(\'' + item.imageUrl + '\',\'_blank\')">';
+      const debugLink = item.debugUrl ? '<a href="' + item.debugUrl + '" target="_blank" style="font-size:0.7em;color:#8b5e3c;text-decoration:none;">调试</a>' : '';
+      const errorText = isError ? '<div style="font-size:0.72em;color:#f87171;margin-top:3px;word-break:break-all;">' + item.error + '</div>' : '';
+      const links = !isError ? '<div style="margin-top:3px;"><a href="' + item.imageUrl + '" target="_blank" style="font-size:0.7em;color:#8b5e3c;text-decoration:none;">大图</a>' + (debugLink ? ' · ' + debugLink : '') + '</div>' : (debugLink ? '<div style="margin-top:3px;">' + debugLink + '</div>' : '');
+      return '<div style="display:flex;gap:10px;padding:8px;border:1px solid ' + (isError ? '#3a1515' : '#222') + ';border-radius:8px;margin-bottom:6px;align-items:flex-start;background:#0d0d14;">' + imgOrError + '<div style="flex:1;min-width:0;"><div style="font-size:0.82em;color:#bbb;">☕ 拉花生成</div><div style="font-size:0.7em;color:#555;margin-top:3px;">' + time + '</div>' + errorText + links + '</div></div>';
+    }).join('');
+  } catch(e) { console.error('加载历史失败:', e); }
+}
+
+// ===== 拖放上传 =====
+els.sourceZone.addEventListener('click', e => { if (!e.target.closest('.reset-btn')) els.sourceInput.click(); });
+els.sourceInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+els.sourceZone.addEventListener('dragover', e => { e.preventDefault(); els.sourceZone.classList.add('dragover'); });
+els.sourceZone.addEventListener('dragleave', () => els.sourceZone.classList.remove('dragover'));
+els.sourceZone.addEventListener('drop', e => {
+  e.preventDefault(); els.sourceZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) handleFile(f);
+});
+
+function handleFile(file) {
+  state.sourceFile = file;
+  const url = URL.createObjectURL(file);
+  state.sourceUrl = url;
+  showImg(els.sourceImg, els.sourcePh, url, els.sourceReset, null, false);
+  updateBtn();
+}
+
+function showImg(imgEl, phEl, src, resetBtn, badge, isGen) {
+  imgEl.src = src; imgEl.style.display = 'block'; phEl.style.display = 'none';
+  imgEl.parentElement.classList.add('has-image');
+  resetBtn?.classList.add('visible');
+  if (isGen) badge?.classList.add('visible'); else badge?.classList.remove('visible');
+}
+function hideImg(imgEl, phEl, resetBtn, badge) {
+  imgEl.src = ''; imgEl.style.display = 'none'; phEl.style.display = 'block';
+  imgEl.parentElement.classList.remove('has-image');
+  resetBtn?.classList.remove('visible'); badge?.classList.remove('visible');
+}
+
+els.sourceReset.addEventListener('click', e => {
+  e.stopPropagation(); state.sourceFile = null; state.sourceUrl = null;
+  hideImg(els.sourceImg, els.sourcePh, els.sourceReset, null); updateBtn();
+});
+
+function updateBtn() {
+  els.btn.classList.toggle('visible', !!state.sourceFile);
+}
+
+// ===== 生成 =====
+els.btn.addEventListener('click', async () => {
+  if (!state.sourceFile) return;
+  els.btn.classList.add('loading'); els.btn.textContent = '⏳ 生成中...';
+  els.resultLoading.classList.add('active');
+  try {
+    const fd = new FormData();
+    fd.append('image', state.sourceFile);
+    if (customPrompt) fd.append('prompt', customPrompt);
+    const r = await fetch('/api/generate', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+
+    // 成对替换demo：刷新两侧面板
+    const ts = Date.now();
+    const srcDemo = '/images/demo-source.jpg?t=' + ts;
+    const resDemo = '/images/demo-result.jpg?t=' + ts;
+    showImg(els.sourceImg, els.sourcePh, srcDemo, els.sourceReset, null, false);
+    showImg(els.resultImg, els.resultPh, resDemo, null, els.resultBadge, true);
+
+    // 更新源图状态为新的demo源图
+    const srcBlob = await fetch(srcDemo).then(r => r.blob());
+    state.sourceFile = new File([srcBlob], 'source.jpg', { type: srcBlob.type || 'image/jpeg' });
+    state.sourceUrl = srcDemo;
+  } catch (e) { alert('生成失败: ' + e.message); }
+  finally {
+    els.resultLoading.classList.remove('active');
+    els.btn.classList.remove('loading'); els.btn.textContent = '☕ 开始生成拉花';
+  }
+});
+
+// ===== 点击标题恢复初始 Demo =====
+document.getElementById('titleBtn').addEventListener('click', async () => {
+  if (!confirm('恢复初始 Demo 图？')) return;
+  try {
+    const r = await fetch('/api/reset-demo', { method: 'POST' });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    state.sourceUrl = d.sourceUrl;
+    state.sourceFile = null;
+    showImg(els.sourceImg, els.sourcePh, d.sourceUrl, els.sourceReset, null, false);
+    showImg(els.resultImg, els.resultPh, d.resultUrl, null, els.resultBadge, false);
+  } catch (e) { alert('恢复失败: ' + e.message); }
+});
+
+// ===== 加载初始 Demo =====
+(function loadDemo() {
+  const sUrl = '/images/demo-source.jpg';
+  const rUrl = '/images/demo-result.jpg';
+  showImg(els.sourceImg, els.sourcePh, sUrl, els.sourceReset, null, false);
+  showImg(els.resultImg, els.resultPh, rUrl, null, els.resultBadge, false);
+  // 设置源图为demo（用户可以直接点生成）
+  fetch(sUrl).then(r => r.blob()).then(blob => {
+    state.sourceFile = new File([blob], 'demo-source.jpg', { type: blob.type || 'image/jpeg' });
+    state.sourceUrl = sUrl;
+    updateBtn();
+  });
+})();
+</script>
+</body>
+</html>

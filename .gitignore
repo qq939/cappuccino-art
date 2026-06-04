@@ -1,0 +1,4 @@
+node_modules/
+.env
+prompts.json
+history.json
