@@ -12,7 +12,7 @@ const http = require('http');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 8083;
+const PORT = process.env.PORT || 8082;
 
 const COZE_API_KEY = process.env.COZE_API_KEY;
 const COZE_WORKFLOW_ID = process.env.COZE_WORKFLOW_ID || '7647377698306129920';
