@@ -246,7 +246,7 @@ app.post('/api/generate', upload.single('image'), async (req, res) => {
 });
 
 // ===== 启动 =====
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n☕ 卡布奇诺拉花服务已启动`);
   console.log(`   地址: http://localhost:${PORT}`);
   console.log(`   Workflow ID: ${COZE_WORKFLOW_ID || '❌ 未配置'}`);
